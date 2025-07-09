@@ -14,7 +14,7 @@ struct ImmersiveView: View {
                 content.add(entity)
             }
         }
-        //.useRotateGesture(constrainedToAxis: .y) // <-- This line enables drag, rotate, and scale!
+        //.useRotateGesture(constrainedToAxis: .y)
         .useFullGesture(constrainedToAxis: .x)
         .task {
             guard let modelURL = appModel.modelURL else { return }
