@@ -15,13 +15,13 @@ struct _D_MicroscopyApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environment(appModel)
+                .environmentObject(appModel)
         }
         .windowStyle(.volumetric)
 
         ImmersiveSpace(id: appModel.immersiveSpaceID) {
             ImmersiveView()
-                .environment(appModel)
+                .environmentObject(appModel)
                 .onAppear {
                     appModel.immersiveSpaceState = .open
                 }

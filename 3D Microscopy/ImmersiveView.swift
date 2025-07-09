@@ -1,30 +1,43 @@
-//
-//  ImmersiveView.swift
-//  3D Microscopy
-//
-//  Created by Future Lab XR1 on 7/8/25.
-//
-
 import SwiftUI
 import RealityKit
-import RealityKitContent
+//import UmainSpatialGestures // Import the gesture extension
 
 struct ImmersiveView: View {
+    @EnvironmentObject private var appModel: AppModel
+    @State private var modelEntity: Entity? = nil
 
     var body: some View {
         RealityView { content in
-            // Add the initial RealityKit content
-            if let immersiveContentEntity = try? await Entity(named: "Immersive", in: realityKitContentBundle) {
-                content.add(immersiveContentEntity)
-
-                // Put skybox here.  See example in World project available at
-                // https://developer.apple.com/
+            // Start empty, we'll add entities dynamically
+        } update: { content in
+            if let entity = modelEntity, content.entities.isEmpty {
+                content.add(entity)
+            }
+        }
+        //.useRotateGesture(constrainedToAxis: .y) // <-- This line enables drag, rotate, and scale!
+        .useFullGesture(constrainedToAxis: .x)
+        .task {
+            guard let modelURL = appModel.modelURL else { return }
+            do {
+                let rawEntity = try await Entity(contentsOf: modelURL)
+                rawEntity.components.set(InputTargetComponent())
+                rawEntity.generateCollisionShapes(recursive: true)
+                let wrappedEntity = centerEntity(rawEntity)
+                wrappedEntity.setPosition([0, 1, -1], relativeTo: nil)
+                modelEntity = wrappedEntity
+            } catch {
+                print("Failed to load model: \(error.localizedDescription)")
             }
         }
     }
+
+    func centerEntity(_ entity: Entity) -> Entity {
+        let anchor = Entity()
+        let bounds = entity.visualBounds(relativeTo: nil)
+        let center = bounds.center
+        entity.position -= center
+        anchor.addChild(entity)
+        return anchor
+    }
 }
 
-#Preview(immersionStyle: .mixed) {
-    ImmersiveView()
-        .environment(AppModel())
-}
