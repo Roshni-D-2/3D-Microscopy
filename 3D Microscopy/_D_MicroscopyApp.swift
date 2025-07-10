@@ -1,33 +1,37 @@
-//
-//  _D_MicroscopyApp.swift
-//  3D Microscopy
-//
-//  Created by Future Lab XR1 on 7/8/25.
-//
-
 import SwiftUI
+import RealityKit
 
 @main
-struct _D_MicroscopyApp: App {
+struct _D_MicroscopyApp: SwiftUI.App {
+    @StateObject private var model = AppModel()
 
-    @State private var appModel = AppModel()
-
-    var body: some Scene {
+    // explicitly tell the compiler you mean SwiftUI.Scene
+    var body: some SwiftUI.Scene {
+        // 2D importer / selection UI
         WindowGroup(id: "MainWindow") {
             ContentView()
-                .environmentObject(appModel)
+                .environmentObject(model)
         }
-        .windowStyle(.plain)
+        .windowStyle(.plain)      // now correctly applies to the SwiftUI WindowGroup
 
-        ImmersiveSpace(id: appModel.immersiveSpaceID) {
-            ImmersiveView()
-                .environmentObject(appModel)
-                .onAppear {
-                    appModel.immersiveSpaceState = .open
+        // immersive fingertip-measurement view
+        ImmersiveSpace(id: model.immersiveSpaceID) {
+            RealityView { content, attachments in
+                content.add(model.myEntities.root)
+                if let board = attachments.entity(for: "resultBoard") {
+                    model.myEntities.add(board)
                 }
-                .onDisappear {
-                    appModel.immersiveSpaceState = .closed
+            } attachments: {
+                Attachment(id: "resultBoard") {
+                    Text(model.resultString)
+                        .monospacedDigit()
+                        .padding()
+                        .glassBackgroundEffect()
+                        .offset(y: -80)
                 }
+            }
+            .task { await model.runSession() }
+            .task { await model.processAnchorUpdates() }
         }
         .immersionStyle(selection: .constant(.mixed), in: .mixed)
     }

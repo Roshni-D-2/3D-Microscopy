@@ -1,6 +1,4 @@
 import SwiftUI
-import RealityKit
-import RealityKitContent
 import UniformTypeIdentifiers
 
 struct ContentView: View {
@@ -21,11 +19,12 @@ struct ContentView: View {
             .foregroundColor(.white)
             .cornerRadius(10)
 
+            // This button toggles you into the immersive space above
             ToggleImmersiveSpaceButton()
-            .padding()
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
 
             List(appModel.availableModels, id: \.self) { modelURL in
                 Button(modelURL.lastPathComponent) {
@@ -54,18 +53,26 @@ struct ContentView: View {
         }
     }
 
-    func loadAvailableModels() {
-        let docsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    // MARK: – Helpers
+
+    private func loadAvailableModels() {
+        let docsURL = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)
+            .first!
         do {
-            let files = try FileManager.default.contentsOfDirectory(at: docsURL, includingPropertiesForKeys: nil)
-            appModel.availableModels = files.filter { $0.pathExtension == "obj" }
+            let files = try FileManager.default
+                .contentsOfDirectory(at: docsURL, includingPropertiesForKeys: nil)
+            appModel.availableModels = files
+                .filter { $0.pathExtension.lowercased() == "obj" }
         } catch {
             print("Failed to load models: \(error)")
         }
     }
 
-    func copyToDocuments(originalURL: URL) {
-        let docsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    private func copyToDocuments(originalURL: URL) {
+        let docsURL = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)
+            .first!
         let destURL = docsURL.appendingPathComponent(originalURL.lastPathComponent)
         do {
             if FileManager.default.fileExists(atPath: destURL.path) {
@@ -74,19 +81,6 @@ struct ContentView: View {
             try FileManager.default.copyItem(at: originalURL, to: destURL)
         } catch {
             print("Copy failed: \(error)")
-        }
-    }
-
-    func openImmersiveSpace() async {
-        guard appModel.modelURL != nil else {
-            print("No model selected")
-            return
-        }
-
-        do {
-            appModel.immersiveSpaceState = .inTransition
-            await openImmersiveSpace()
-            appModel.immersiveSpaceState = .open
         }
     }
 }

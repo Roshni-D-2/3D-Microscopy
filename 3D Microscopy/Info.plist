@@ -19,5 +19,10 @@
 			</array>
 		</dict>
 	</dict>
+    <key>NSWorldSensingUsageDescription</key>
+    <string>Allow world sensing so we can accurately position and measure objects in space.</string>
+    <key>NSHandsTrackingUsageDescription</key>
+    <string>Allow hand tracking so we can detect your fingertips and measure the distance between them.</string>
+
 </dict>
 </plist>
