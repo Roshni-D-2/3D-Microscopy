@@ -5,31 +5,45 @@ import RealityKit
 struct _D_MicroscopyApp: SwiftUI.App {
     @StateObject private var model = AppModel()
 
-    // explicitly tell the compiler you mean SwiftUI.Scene
     var body: some SwiftUI.Scene {
         // 2D importer / selection UI
         WindowGroup(id: "MainWindow") {
             ContentView()
                 .environmentObject(model)
         }
-        .windowStyle(.plain)      // now correctly applies to the SwiftUI WindowGroup
+        .windowStyle(.plain)
 
         // immersive fingertip-measurement view
         ImmersiveSpace(id: model.immersiveSpaceID) {
             RealityView { content, attachments in
-                content.add(model.myEntities.root)
+                // only show measurement entities when "on"
+                if model.isOn {
+                    content.add(model.myEntities.root)
+                }
+                // always hook up the floating result board
                 if let board = attachments.entity(for: "resultBoard") {
                     model.myEntities.add(board)
                 }
             } attachments: {
-                Attachment(id: "resultBoard") {
-                    Text(model.resultString)
-                        .monospacedDigit()
+                // on/off toggle
+                Attachment(id: "measureSwitch") {
+                    Toggle("Measure", isOn: $model.isOn)
                         .padding()
                         .glassBackgroundEffect()
-                        .offset(y: -80)
+                        .offset(y: -120)
+                }
+                // result label (only when on)
+                Attachment(id: "resultBoard") {
+                    if model.isOn {
+                        Text(model.resultString)
+                            .monospacedDigit()
+                            .padding()
+                            .glassBackgroundEffect()
+                            .offset(y: -80)
+                    }
                 }
             }
+            // <-- these .task modifiers must come *after* the attachments block
             .task { await model.runSession() }
             .task { await model.processAnchorUpdates() }
         }

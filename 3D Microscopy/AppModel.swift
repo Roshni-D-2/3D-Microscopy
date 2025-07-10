@@ -21,6 +21,13 @@ class AppModel: ObservableObject {
     @Published var modelURL: URL? = nil
     @Published var availableModels: [URL] = []
     
+    //for on/off button
+    @Published var isOn: Bool = true {
+        didSet {
+            myEntities.root.isEnabled = isOn
+        }
+    }
+    
     //hand tracking code
     private var arKitSession = ARKitSession()
     private var handTrackingProvider = HandTrackingProvider()
@@ -33,6 +40,10 @@ class AppModel: ObservableObject {
         
         func processAnchorUpdates() async {
             for await update in handTrackingProvider.anchorUpdates {
+                
+                //if isOn is flase then skip the rest
+                guard isOn else { continue }
+                
                 let handAnchor = update.anchor
                 
                 guard handAnchor.isTracked,
