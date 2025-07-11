@@ -36,15 +36,23 @@ struct ContentView: View {
         }
         .fileImporter(
             isPresented: $showImporter,
+            //only importing .obj for now
             allowedContentTypes: [UTType(filenameExtension: "obj")!],
-            allowsMultipleSelection: false
+            allowsMultipleSelection: true
         ) { result in
             switch result {
             case .success(let urls):
-                if let selectedURL = urls.first {
-                    copyToDocuments(originalURL: selectedURL)
-                    loadAvailableModels()
+                for url in urls {
+                    let gotAccess = url.startAccessingSecurityScopedResource()
+                    defer { if gotAccess { url.stopAccessingSecurityScopedResource() } }
+
+                    guard gotAccess else {
+                        print("Could not access file due to restrictions.")
+                        return
+                    }
+                    copyToDocuments(originalURL: url)
                 }
+                loadAvailableModels()
             case .failure(let error):
                 print("Import failed: \(error.localizedDescription)")
             }
@@ -59,6 +67,7 @@ struct ContentView: View {
         do {
             let files = try FileManager.default.contentsOfDirectory(at: docsURL, includingPropertiesForKeys: nil)
             appModel.availableModels = files.filter { $0.pathExtension == "obj" }
+            print("loaded something...")
         } catch {
             print("Failed to load models: \(error)")
         }
@@ -72,6 +81,7 @@ struct ContentView: View {
                 try FileManager.default.removeItem(at: destURL)
             }
             try FileManager.default.copyItem(at: originalURL, to: destURL)
+            print("copied")
         } catch {
             print("Copy failed: \(error)")
         }
@@ -90,3 +100,4 @@ struct ContentView: View {
         }
     }
 }
+

@@ -40,4 +40,3 @@ struct ImmersiveView: View {
         return anchor
     }
 }
-
