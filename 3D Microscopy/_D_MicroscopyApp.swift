@@ -1,15 +1,10 @@
-//
-//  _D_MicroscopyApp.swift
-//  3D Microscopy
-//
-//  Created by Future Lab XR1 on 7/8/25.
-//
-
 import SwiftUI
+//import RealityKit
+//import RealityKitContent
+
 
 @main
 struct _D_MicroscopyApp: App {
-
     @State private var appModel = AppModel()
 
     var body: some Scene {
@@ -30,5 +25,14 @@ struct _D_MicroscopyApp: App {
                 }
         }
         .immersionStyle(selection: .constant(.mixed), in: .mixed)
+
+        // ✅ Add this
+        WindowGroup(id: "GestureControlPanel") {
+            GestureToolbar()
+                .environmentObject(appModel)
+        }
+        .defaultSize(width: 800, height: 100) // Optional
+        .windowStyle(.plain) // Optional
     }
 }
+
