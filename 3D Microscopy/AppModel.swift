@@ -1,3 +1,5 @@
+
+
 //
 //  AppModel.swift
 //  3D Microscopy
@@ -7,8 +9,14 @@
 
 import SwiftUI
 
+enum GestureMode: String, CaseIterable {
+        case none, drag, rotate, scale, measure
+}
 @MainActor
 class AppModel: ObservableObject {
+
+    @Published var gestureMode: GestureMode = .none
+
     let immersiveSpaceID = "ImmersiveSpace"
     enum ImmersiveSpaceState {
         case closed

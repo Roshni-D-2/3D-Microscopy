@@ -10,7 +10,8 @@ import SwiftUI
 struct ToggleImmersiveSpaceButton: View {
 
     @EnvironmentObject private var appModel: AppModel
-
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
 
@@ -24,6 +25,8 @@ struct ToggleImmersiveSpaceButton: View {
                         // Don't set immersiveSpaceState to .closed because there
                         // are multiple paths to ImmersiveView.onDisappear().
                         // Only set .closed in ImmersiveView.onDisappear().
+                        dismissWindow(id: "GestureControlPanel")
+
 
                     case .closed:
                         appModel.immersiveSpaceState = .inTransition
@@ -32,6 +35,8 @@ struct ToggleImmersiveSpaceButton: View {
                                 // Don't set immersiveSpaceState to .open because there
                                 // may be multiple paths to ImmersiveView.onAppear().
                                 // Only set .open in ImmersiveView.onAppear().
+                                openWindow(id: "GestureControlPanel")
+                            print("opened immersiove")
                                 break
 
                             case .userCancelled, .error:
