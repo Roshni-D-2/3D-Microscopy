@@ -1,17 +1,9 @@
-//
-//  _D_MicroscopyApp.swift
-//  3D Microscopy
-//
-//  Created by Future Lab XR1 on 7/8/25.
-//
-
 import SwiftUI
 //import RealityKit //why does this cause errors.
 import RealityKitContent
 
 @main
 struct _D_MicroscopyApp: App {
-
     @State private var appModel = AppModel()
 
     var body: some Scene {
