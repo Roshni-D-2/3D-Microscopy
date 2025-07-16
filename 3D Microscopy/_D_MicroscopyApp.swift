@@ -10,7 +10,7 @@ struct _D_MicroscopyApp: App {
         //main screen launch
         WindowGroup(id: "MainWindow") {
             ContentView()
-                .environmentObject(appModel)
+                .environmentObject(model)
         }
         .windowStyle(.plain)
 //open immersive

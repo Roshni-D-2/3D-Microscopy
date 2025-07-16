@@ -20,8 +20,30 @@ struct ImmersiveView: View {
                     content.add(entity)
                 }
             }
+
+            // 3️⃣ Hook up the floating result‐board attachment
+            if let board = attachments.entity(for: "resultBoard") {
+                appModel.myEntities.add(board)
+            }
+        } attachments: {
+            // This SwiftUI view will track to “resultBoard” in the scene
+            Attachment(id: "resultBoard") {
+                Text(appModel.resultString)
+                    .monospacedDigit()
+                    .padding()
+                    .glassBackgroundEffect()
+                    .offset(y: -80)
+            }
         }
+        // Allow full 6-DOF gestures on your imported model
+        //.useFullGesture(constrainedToAxis: .x)
+        // Kick off hand‐tracking, then process its anchor updates indefinitely:
         .task {
+            await appModel.runSession()
+            await appModel.processAnchorUpdates()
+        }
+        // Watch for a new modelURL and load that .obj into the scene
+        .task(id: appModel.modelURL) {
             guard let modelURL = appModel.modelURL else { return }
             do {
                 let rawEntity = try await Entity(contentsOf: modelURL)
