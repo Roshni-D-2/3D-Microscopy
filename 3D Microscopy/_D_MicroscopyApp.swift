@@ -10,7 +10,7 @@ struct _D_MicroscopyApp: App {
         //main screen launch
         WindowGroup(id: "MainWindow") {
             ContentView()
-                .environmentObject(model)
+                .environmentObject(appModel)
         }
         .windowStyle(.plain)
 //open immersive
@@ -20,6 +20,7 @@ struct _D_MicroscopyApp: App {
                 .environmentObject(appModel)
                 .onAppear {
                     appModel.immersiveSpaceState = .open
+                    print("Immersive appeared. isOn: \(appModel.isOn), modelURL: \(String(describing: appModel.modelURL))")
                 
                 }
                 .onDisappear {
@@ -36,7 +37,7 @@ struct _D_MicroscopyApp: App {
         }
         .windowStyle(.plain)
         //needs to be wider
-        .defaultSize(width: 800, height: 100)
+        .defaultSize(width: 1000, height: 100)
     }
 }
 

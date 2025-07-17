@@ -1,66 +1,102 @@
-
-
 import SwiftUI
 import RealityKit
 
 struct ImmersiveView: View {
     @EnvironmentObject private var appModel: AppModel
     @State private var modelEntity: Entity? = nil
-//    @Environment(\.openWindow) private var openWindow
+    //vars for drag gesture
     @GestureState private var dragOffset: CGSize = .zero
     @State private var lastDragPosition: SIMD3<Float>? = nil
-
+    
+    // Add a state variable to force RealityView updates
+    @State private var updateTrigger: Bool = false
 
     var body: some View {
         gestureWrapper(for: modelEntity) {
-            RealityView { content in
-                // Add model once loaded
-            } update: { content in
-                if let entity = modelEntity, content.entities.isEmpty {
+            RealityView { content, attachments in
+                // Add hand-tracking root entities
+                if appModel.isOn {
+                    print("Adding measuring bar root entity")
+                    content.add(appModel.myEntities.root)
+                }
+                // Add model once it's loaded
+                if let entity = modelEntity {
+                    print("added model")
                     content.add(entity)
                 }
-            }
 
-            // 3️⃣ Hook up the floating result‐board attachment
-            if let board = attachments.entity(for: "resultBoard") {
-                appModel.myEntities.add(board)
-            }
-        } attachments: {
-            // This SwiftUI view will track to “resultBoard” in the scene
-            Attachment(id: "resultBoard") {
-                Text(appModel.resultString)
-                    .monospacedDigit()
-                    .padding()
-                    .glassBackgroundEffect()
-                    .offset(y: -80)
+                // Add result board overlay if available
+                if let board = attachments.entity(for: "resultBoard") {
+                    appModel.myEntities.add(board)
+                }
+            } update: { content, attachments in
+                // This update block runs when updateTrigger changes
+                
+                // Clear existing content except for hand tracking
+                content.entities.removeAll { entity in
+                    entity != appModel.myEntities.root
+                }
+                
+                // Re-add model if it exists
+                if let entity = modelEntity {
+                    content.add(entity)
+                }
+                
+                // Handle hand tracking visibility
+                if appModel.isOn && !content.entities.contains(appModel.myEntities.root) {
+                    content.add(appModel.myEntities.root)
+                } else if !appModel.isOn && content.entities.contains(appModel.myEntities.root) {
+                    content.remove(appModel.myEntities.root)
+                }
+            } attachments: {
+                // Attachment for floating result display
+                Attachment(id: "resultBoard") {
+                    Text(appModel.resultString)
+                        .monospacedDigit()
+                        .padding()
+                        .glassBackgroundEffect()
+                        .offset(y: -80)
+                }
             }
         }
-        // Allow full 6-DOF gestures on your imported model
-        //.useFullGesture(constrainedToAxis: .x)
-        // Kick off hand‐tracking, then process its anchor updates indefinitely:
+        // Add updateTrigger as an id to force RealityView updates
+        .id(updateTrigger)
+        // Kick off hand‐tracking session and anchor updates
         .task {
             await appModel.runSession()
+        }
+        .task {
+            // Process anchor updates continuously
             await appModel.processAnchorUpdates()
         }
-        // Watch for a new modelURL and load that .obj into the scene
+        // Watch for modelURL changes and load model
         .task(id: appModel.modelURL) {
-            guard let modelURL = appModel.modelURL else { return }
-            do {
-                let rawEntity = try await Entity(contentsOf: modelURL)
-                rawEntity.components.set(InputTargetComponent())
-                rawEntity.generateCollisionShapes(recursive: true)
-                let wrappedEntity = centerEntity(rawEntity)
-                wrappedEntity.setPosition([0, 1, -1], relativeTo: nil)
-                modelEntity = wrappedEntity
-                
-//                openWindow(id: "GestureControlPanel")
-            } catch {
-                print("Failed to load model: \(error.localizedDescription)")
+            // Load model if not already loaded and modelURL exists
+            if let modelURL = appModel.modelURL {
+                do {
+                    let rawEntity = try await Entity(contentsOf: modelURL)
+                    rawEntity.components.set(InputTargetComponent())
+                    rawEntity.generateCollisionShapes(recursive: true)
+                    let wrappedEntity = centerEntity(rawEntity)
+                    wrappedEntity.setPosition([0, 1, -1], relativeTo: nil)
+                    modelEntity = wrappedEntity
+                    
+                    // Toggle updateTrigger to force RealityView to re-render
+                    updateTrigger.toggle()
+                    
+                    print("Model loaded !!")
+                } catch {
+                    print("Failed to load model: \(error.localizedDescription)")
+                }
             }
         }
+        // Watch for changes to isOn and trigger update
+        .onChange(of: appModel.isOn) { _, _ in
+            updateTrigger.toggle()
+        }
     }
-
-    // Center the model
+    
+    // Center the model by wrapping it in an anchor
     func centerEntity(_ entity: Entity) -> Entity {
         let anchor = Entity()
         let bounds = entity.visualBounds(relativeTo: nil)
@@ -69,72 +105,69 @@ struct ImmersiveView: View {
         anchor.addChild(entity)
         return anchor
     }
-    // Wrap the view in gestures based on mode
-       @ViewBuilder
-       func gestureWrapper<Content: View>(for entity: Entity?, @ViewBuilder content: () -> Content) -> some View {
-           switch appModel.gestureMode {
-               //hopefully smoother drag
-           case .drag:
-               content()
-                   .gesture(
-                       DragGesture()
-                           .updating($dragOffset) { value, state, _ in
-                               state = value.translation
-                           }
-                           .onChanged { value in
-                               guard let entity = entity else { return }
 
-                               // Convert translation to Float
-                               let currentX = Float(value.translation.width)
-                               let currentZ = Float(value.translation.height)
+    // Custom gesture wrapper for different modes
+    @ViewBuilder
+    func gestureWrapper<Content: View>(for entity: Entity?, @ViewBuilder content: () -> Content) -> some View {
+        switch appModel.gestureMode {
+        case .drag:
+            content()
+                .gesture(
+                    DragGesture()
+                        .updating($dragOffset) { value, state, _ in
+                            state = value.translation
+                        }
+                        .onChanged { value in
+                            guard let entity = entity else { return }
 
-                               let lastX = lastDragPosition?.x ?? 0
-                               let lastZ = lastDragPosition?.z ?? 0
+                            let currentX = Float(value.translation.width)
+                            let currentZ = Float(value.translation.height)
 
-                               let deltaX = (currentX - lastX) * 0.001
-                               let deltaZ = (lastZ - currentZ) * 0.001 // negative to go in correct direction
+                            let lastX = lastDragPosition?.x ?? 0
+                            let lastZ = lastDragPosition?.z ?? 0
 
-                               entity.position += SIMD3<Float>(deltaX, 0, deltaZ)
+                            let deltaX = (currentX - lastX) * 0.001
+                            let deltaZ = (lastZ - currentZ) * 0.001
 
-                               // Update last position
-                               lastDragPosition = SIMD3<Float>(currentX, 0, currentZ)
-                           }
-                           .onEnded { _ in
-                               lastDragPosition = nil
-                           }
-                   )
-               
-               // smoothed rotation with better control
-               case .rotate:
-                   content().gesture(
-                       DragGesture()
-                           .onChanged { value in
-                               guard let entity = entity else { return }
-                               let sensitivity: Float = 0.003  // smaller = slower rotation
-                               let angle = Float(value.translation.width) * sensitivity
-                               let rotation = simd_quatf(angle: angle, axis: [0, 1, 0])
-                               entity.transform.rotation = rotation * entity.transform.rotation
-                           }
-                   )
+                            entity.position += SIMD3<Float>(deltaX, 0, deltaZ)
 
-           case .scale:
-               content().gesture(
-                   MagnificationGesture().onChanged { value in
-                       if let entity = entity {
-                           entity.transform.scale = [Float(value), Float(value), Float(value)]
-                       }
-                   }
-               )
+                            lastDragPosition = SIMD3<Float>(currentX, 0, currentZ)
+                        }
+                        .onEnded { _ in
+                            lastDragPosition = nil
+                        }
+                )
 
-           case .measure:
-               content().gesture(
-                   SpatialTapGesture().targetedToAnyEntity().onEnded { value in
-                       print("📏 Measurement feature placeholder – tapped \(value.entity.name)")
-                   }
-               )
+        case .rotate:
+            content().gesture(
+                DragGesture()
+                    .onChanged { value in
+                        guard let entity = entity else { return }
+                        let sensitivity: Float = 0.003
+                        let angle = Float(value.translation.width) * sensitivity
+                        let rotation = simd_quatf(angle: angle, axis: [0, 1, 0])
+                        entity.transform.rotation = rotation * entity.transform.rotation
+                    }
+            )
 
-           default:
-               content() // No gesture
-           }
-       }
+        case .scale:
+            content().gesture(
+                MagnificationGesture().onChanged { value in
+                    if let entity = entity {
+                        entity.transform.scale = [Float(value), Float(value), Float(value)]
+                    }
+                }
+            )
+
+        case .measure:
+            //basically all of measuring bar code is in my entities and appmodel, all that haoppens when
+            //measure gesture is clicked is in gesture toolbar - tracking is enabled
+            content()
+            
+        case .crop:
+            content()
+        default:
+            content() // No gesture
+        }
+    }
 }

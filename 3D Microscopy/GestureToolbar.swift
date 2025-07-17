@@ -1,29 +1,49 @@
-//
-//  GestureToolbar.swift
-//  3D Microscopy
-//
-//  Created by Future Lab XR1 on 7/15/25.
-//
-
-
 import SwiftUI
 
 struct GestureToolbar: View {
     @EnvironmentObject var appModel: AppModel
-
 
     var body: some View {
         HStack(spacing: 16) {
             ForEach(GestureMode.allCases, id: \.self) { mode in
                 Button {
                     appModel.gestureMode = mode
-                } label : {
-                    Text(mode.rawValue)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(appModel.gestureMode == mode ? Color.purple.opacity(0.8) : Color.gray.opacity(0.2))
-                        .foregroundColor(.white)
-                        .clipShape(Capsule())
+                    //if presses measure enables hand tracking
+                    let wasOn = appModel.isOn
+                    appModel.isOn = (mode == .measure)
+                    
+                    
+                    // reset finger positions
+                    if !appModel.isOn && wasOn {
+                        appModel.myEntities.fingerTips[.left]?.position = SIMD3<Float>(-1000, -1000, -1000)
+                        appModel.myEntities.fingerTips[.right]?.position = SIMD3<Float>(-1000, -1000, -1000)
+                    }
+
+                } label: {
+                    HStack {
+                        //icons
+                        switch mode {
+                        case .none:
+                            Image(systemName: "hand.raised.slash")
+                        case .drag:
+                            Image(systemName: "hand.tap")
+                        case .rotate:
+                            Image(systemName: "arrow.clockwise")
+                        case .scale:
+                            Image(systemName: "plus.magnifyingglass")
+                        case .measure:
+                            Image(systemName: "ruler")
+                        case .crop:
+                            Image(systemName: "scissor")
+                        }
+                        
+                        Text(mode.rawValue.capitalized)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(appModel.gestureMode == mode ? Color.purple.opacity(0.8) : Color.gray.opacity(0.2))
+                    .foregroundColor(.white)
+                    .clipShape(Capsule())
                 }
             }
         }
