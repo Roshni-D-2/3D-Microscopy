@@ -160,9 +160,28 @@ struct ImmersiveView: View {
             )
 
         case .measure:
-            //basically all of measuring bar code is in my entities and appmodel, all that haoppens when
-            //measure gesture is clicked is in gesture toolbar - tracking is enabled
             content()
+                .gesture(
+                    // Single tap to place measurement
+                    TapGesture()
+                        .onEnded { _ in
+                            appModel.myEntities.placeMeasurement()
+                        }
+                )
+                .gesture(
+                    // Double tap to remove last measurement
+                    TapGesture(count: 2)
+                        .onEnded { _ in
+                            appModel.myEntities.removeLastMeasurement()
+                        }
+                )
+                .gesture(
+                    // Long press to clear all measurements
+                    LongPressGesture(minimumDuration: 1.0)
+                        .onEnded { _ in
+                            appModel.myEntities.clearAllMeasurements()
+                        }
+                )
             
         case .crop:
             content()
