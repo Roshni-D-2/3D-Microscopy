@@ -5,6 +5,7 @@ import RealityKitContent
 @main
 struct _D_MicroscopyApp: App {
     @State private var appModel = AppModel()
+    
 
     var body: some Scene {
         //main screen launch
@@ -38,6 +39,11 @@ struct _D_MicroscopyApp: App {
         .windowStyle(.plain)
         //needs to be wider
         .defaultSize(width: 1000, height: 100)
+        
+        WindowGroup(id: "TutorialView") {
+            TutorialView()
+                .environmentObject(appModel)
+        }
     }
 }
 

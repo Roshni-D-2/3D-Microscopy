@@ -122,7 +122,7 @@ class AppModel: ObservableObject {
         }
     }
     
-    // MARK: - Pinch Detection Methods (NEW)
+    // MARK: - Pinch Detection Methods
     
     private func detectPinchGesture(_ chirality: HandAnchor.Chirality, _ currentDistance: Float) {
         let now = Date()
@@ -162,8 +162,7 @@ class AppModel: ObservableObject {
         myEntities.placeMeasurement()
         print("Measurement placed via left hand pinch")
         
-        // Optional: Add haptic feedback if available
-        // AudioServicesPlaySystemSound(1519) // Light haptic
+        
     }
     
     private func handleRightPinch() {
@@ -171,8 +170,7 @@ class AppModel: ObservableObject {
         myEntities.removeLastMeasurement()
         print("Last measurement removed via right hand pinch")
         
-        // Optional: Add haptic feedback if available
-        // AudioServicesPlaySystemSound(1520) // Medium haptic
+      
     }
     
     // MARK: - Public Methods for UI Controls (NEW)

@@ -2,7 +2,9 @@ import SwiftUI
 
 struct GestureToolbar: View {
     @EnvironmentObject var appModel: AppModel
-
+    @Environment(\.openWindow) private var openWindow
+    @State private var numMeasured = 0
+    
     var body: some View {
         HStack(spacing: 16) {
             ForEach(GestureMode.allCases, id: \.self) { mode in
@@ -11,6 +13,11 @@ struct GestureToolbar: View {
                     //if presses measure enables hand tracking
                     let wasOn = appModel.isOn
                     appModel.isOn = (mode == .measure)
+                    
+                    if(mode == .measure && numMeasured == 0) {
+                        openWindow(id:"TutorialView")
+                        numMeasured += 1
+                    }
                     
                     
                     // reset finger positions
