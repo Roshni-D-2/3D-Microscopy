@@ -41,10 +41,11 @@ struct GestureToolbar: View {
                         case .measure:
                             Image(systemName: "ruler")
                         case .crop:
-                            Image(systemName: "scissor")
+                            Image(systemName: "scissors")
                         }
                         
                         Text(mode.rawValue.capitalized)
+                            .fixedSize() // prevents wrapping
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)

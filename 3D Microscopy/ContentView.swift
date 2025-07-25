@@ -11,6 +11,7 @@ struct ContentView: View {
                 .font(.largeTitle)
                 .bold()
 
+            Text("🌌 Clicking 'Show Model' enters you into immersive view.\n🪐 Clicking 'Hide Model' returns you to mixed reality view.")
             Button("Import Model File") {
                 showImporter = true
             }
