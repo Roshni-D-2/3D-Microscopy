@@ -1,3 +1,10 @@
+//
+//  GestureToolbar.swift
+//  3D Microscopy
+//
+//  Created by Future Lab XR1 in 2025.
+//
+
 import SwiftUI
 
 struct GestureToolbar: View {
