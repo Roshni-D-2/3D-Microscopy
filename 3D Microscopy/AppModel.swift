@@ -1,5 +1,3 @@
-
-
 //
 //  AppModel.swift
 //  3D Microscopy
