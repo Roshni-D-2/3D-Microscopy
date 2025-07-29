@@ -68,8 +68,7 @@ struct ContentView: View {
         }
     }
 
-//helper funcyions
-    
+    //helper functions
     private func loadAvailableModels() {
         let docsURL = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)
@@ -100,4 +99,3 @@ struct ContentView: View {
         }
     }
 }
-
