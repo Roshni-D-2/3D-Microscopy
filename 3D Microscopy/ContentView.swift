@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  3D Microscopy
 //
-//  Created by Future Lab XR1 on 7/8/25.
+//  Created by Future Lab XR1 in 2025.
 //
 
 import SwiftUI
