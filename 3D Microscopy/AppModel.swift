@@ -28,6 +28,20 @@ class AppModel: ObservableObject {
     @Published var modelURL: URL? = nil
     @Published var availableModels: [URL] = []
     
+    
+    // Crop-specific properties
+    @Published var cropPreviewEntity: ModelEntity?
+    @Published var isDrawingCropLine = false
+    @Published var cropStartPoint: SIMD3<Float>?
+    @Published var cropEndPoint: SIMD3<Float>?
+
+    func cleanupCropPreview() {
+        cropPreviewEntity?.removeFromParent()
+        cropPreviewEntity = nil
+    }
+    
+    
+    
     //for on/off button
     @Published var isOn: Bool = false {
         didSet {

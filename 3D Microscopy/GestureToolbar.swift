@@ -18,7 +18,17 @@ struct GestureToolbar: View {
             ForEach(GestureMode.allCases, id: \.self) { mode in
                 Button {
                     appModel.gestureMode = mode
-                    //if presses measure or annotate, enables hand tracking
+                    
+                    // Clean up crop preview when switching modes
+                    if mode != .crop {
+                        appModel.cleanupCropPreview()
+                        appModel.isDrawingCropLine = false
+                        appModel.cropStartPoint = nil
+                        appModel.cropEndPoint = nil
+                    }
+                    
+                    
+                    //if presses measure enables hand tracking
                     let wasOn = appModel.isOn
                     appModel.isOn = (mode == .measure || mode == .annotate)
                     
@@ -48,7 +58,7 @@ struct GestureToolbar: View {
                         case .rotate:
                             Image(systemName: "arrow.clockwise")
                         case .scale:
-                            Image(systemName: "plus.magnifyingglass")
+                            Image(systemName: "plus.magnifyingglass") //icons for every gesture
                         case .measure:
                             Image(systemName: "ruler")
                         case .annotate:
