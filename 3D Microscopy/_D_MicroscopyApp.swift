@@ -1,3 +1,10 @@
+//
+//  _D_MicroscopyApp.swift
+//  3D Microscopy
+//
+//  Created by Future Lab XR1 in 2025.
+//
+
 import SwiftUI
 //import RealityKit //why does this cause errors.
 import RealityKitContent

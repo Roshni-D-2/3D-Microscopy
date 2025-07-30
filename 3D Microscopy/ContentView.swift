@@ -1,3 +1,10 @@
+//
+//  ContentView.swift
+//  3D Microscopy
+//
+//  Created by Future Lab XR1 in 2025.
+//
+
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -62,8 +69,7 @@ struct ContentView: View {
         }
     }
 
-//helper funcyions
-    
+    //helper functions
     private func loadAvailableModels() {
         let docsURL = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)
@@ -94,4 +100,3 @@ struct ContentView: View {
         }
     }
 }
-
