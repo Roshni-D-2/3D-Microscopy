@@ -4,13 +4,15 @@ import RealityKit
 struct ImmersiveView: View {
     @EnvironmentObject private var appModel: AppModel
     @State private var modelEntity: Entity? = nil
+    @Environment(\.openWindow) private var openWindow
+    
     //vars for drag gesture
     @GestureState private var dragOffset: CGSize = .zero
     @State private var lastDragPosition: SIMD3<Float>? = nil
     
     // Add a state variable to force RealityView updates
     @State private var updateTrigger: Bool = false
-
+    
     var body: some View {
         gestureWrapper(for: modelEntity) {
             RealityView { content, attachments in
@@ -24,10 +26,15 @@ struct ImmersiveView: View {
                     print("added model")
                     content.add(entity)
                 }
-
                 // Add result board overlay if available
                 if let board = attachments.entity(for: "resultBoard") {
                     appModel.myEntities.add(board)
+                }
+                
+                // Add annotation controls overlay for annotation mode
+                if let controls = attachments.entity(for: "annotationControls") {
+                    controls.position = [0.5, 0.3, -0.5] // Position in front of user
+                    content.add(controls)
                 }
             } update: { content, attachments in
                 // This update block runs when updateTrigger changes
@@ -48,6 +55,18 @@ struct ImmersiveView: View {
                 } else if !appModel.isOn && content.entities.contains(appModel.myEntities.root) {
                     content.remove(appModel.myEntities.root)
                 }
+                
+                // Update annotation controls visibility
+                if let controls = attachments.entity(for: "annotationControls") {
+                    if appModel.gestureMode == .annotate && appModel.isOn {
+                        controls.position = [0.5, 0.3, -0.5]
+                        if !content.entities.contains(controls) {
+                            content.add(controls)
+                        }
+                    } else {
+                        content.remove(controls)
+                    }
+                }
             } attachments: {
                 // Attachment for floating result display
                 Attachment(id: "resultBoard") {
@@ -56,6 +75,14 @@ struct ImmersiveView: View {
                         .padding()
                         .glassBackgroundEffect()
                         .offset(y: -80)
+                }
+                
+                // Attachment for annotation controls (only visible in annotation mode)
+                if appModel.gestureMode == .annotate {
+                    Attachment(id: "annotationControls") {
+                        AnnotationControlsView(annotationManager: appModel.annotationManager)
+                            .environmentObject(appModel)
+                    }
                 }
             }
         }
@@ -94,6 +121,17 @@ struct ImmersiveView: View {
         .onChange(of: appModel.isOn) { _, _ in
             updateTrigger.toggle()
         }
+        // Watch for gesture mode changes
+        .onChange(of: appModel.gestureMode) { _, _ in
+            updateTrigger.toggle()
+        }
+        // Handle pending annotation creation
+        .onChange(of: appModel.pendingAnnotationPosition) { _, newPosition in
+            if newPosition != nil {
+                // Open annotation input window when a new annotation is requested
+                openWindow(id: "AnnotationInput")
+            }
+        }
     }
     
     // Center the model by wrapping it in an anchor
@@ -105,7 +143,7 @@ struct ImmersiveView: View {
         anchor.addChild(entity)
         return anchor
     }
-
+    
     // Custom gesture wrapper for different modes
     @ViewBuilder
     func gestureWrapper<Content: View>(for entity: Entity?, @ViewBuilder content: () -> Content) -> some View {
@@ -119,25 +157,19 @@ struct ImmersiveView: View {
                         }
                         .onChanged { value in
                             guard let entity = entity else { return }
-
                             let currentX = Float(value.translation.width)
                             let currentZ = Float(value.translation.height)
-
                             let lastX = lastDragPosition?.x ?? 0
                             let lastZ = lastDragPosition?.z ?? 0
-
                             let deltaX = (currentX - lastX) * 0.001
                             let deltaZ = (lastZ - currentZ) * 0.001
-
                             entity.position += SIMD3<Float>(deltaX, 0, deltaZ)
-
                             lastDragPosition = SIMD3<Float>(currentX, 0, currentZ)
                         }
                         .onEnded { _ in
                             lastDragPosition = nil
                         }
                 )
-
         case .rotate:
             content().gesture(
                 DragGesture()
@@ -149,7 +181,6 @@ struct ImmersiveView: View {
                         entity.transform.rotation = rotation * entity.transform.rotation
                     }
             )
-
         case .scale:
             content().gesture(
                 MagnificationGesture().onChanged { value in
@@ -158,7 +189,6 @@ struct ImmersiveView: View {
                     }
                 }
             )
-
         case .measure:
             content()
                 .gesture(
@@ -180,6 +210,22 @@ struct ImmersiveView: View {
                     LongPressGesture(minimumDuration: 1.0)
                         .onEnded { _ in
                             appModel.myEntities.clearAllMeasurements()
+                        }
+                )
+        
+        case .annotate:
+            content()
+                .onTapGesture { location in
+                    // Handle tap on existing annotations or create new ones
+                    // For now, we rely on pinch gestures for annotation creation
+                    // This could be extended to handle tap-to-select annotations
+                    print("Tap in annotation mode at: \(location)")
+                }
+                .gesture(
+                    // Long press to clear all annotations
+                    LongPressGesture(minimumDuration: 1.0)
+                        .onEnded { _ in
+                            appModel.clearAllAnnotations()
                         }
                 )
             

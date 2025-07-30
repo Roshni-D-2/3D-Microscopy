@@ -14,7 +14,8 @@ struct _D_MicroscopyApp: App {
                 .environmentObject(appModel)
         }
         .windowStyle(.plain)
-//open immersive
+        
+        //open immersive
         ImmersiveSpace(id: appModel.immersiveSpaceID) {
             ImmersiveView()
             //toggles state view
@@ -34,16 +35,36 @@ struct _D_MicroscopyApp: App {
         WindowGroup(id: "GestureControlPanel") {
             GestureToolbar()
                 .environmentObject(appModel)
-//                .offset(y: 100)
         }
         .windowStyle(.plain)
-        //needs to be wider
-        .defaultSize(width: 1000, height: 100)
+        .defaultSize(width: 1200, height: 100) // Made wider to accommodate new button
         
+        // Measurement tutorial
         WindowGroup(id: "TutorialView") {
             TutorialView()
                 .environmentObject(appModel)
         }
+        
+        // Annotation tutorial
+        WindowGroup(id: "AnnotationTutorialView") {
+            AnnotationTutorialView()
+                .environmentObject(appModel)
+        }
+        
+        // Annotation text input window
+        WindowGroup(id: "AnnotationInput") {
+            AnnotationInputView(annotationManager: appModel.annotationManager)
+                .environmentObject(appModel)
+        }
+        .windowStyle(.plain)
+        .defaultSize(width: 450, height: 500)
+        
+        // Annotation controls overlay (for annotation mode)
+        WindowGroup(id: "AnnotationControls") {
+            AnnotationControlsView(annotationManager: appModel.annotationManager)
+                .environmentObject(appModel)
+        }
+        .windowStyle(.plain)
+        .defaultSize(width: 200, height: 150)
     }
 }
-
