@@ -26,8 +26,8 @@ struct ImmersiveView: View {
                     print("added model")
                     content.add(entity)
                 }
-                // Add result board overlay if available
-                if let board = attachments.entity(for: "resultBoard") {
+                // Add result board overlay if available and in measure mode
+                if let board = attachments.entity(for: "resultBoard"), appModel.gestureMode == .measure {
                     appModel.myEntities.add(board)
                 }
                 
@@ -68,13 +68,15 @@ struct ImmersiveView: View {
                     }
                 }
             } attachments: {
-                // Attachment for floating result display
-                Attachment(id: "resultBoard") {
-                    Text(appModel.resultString)
-                        .monospacedDigit()
-                        .padding()
-                        .glassBackgroundEffect()
-                        .offset(y: -80)
+                // Attachment for floating result display (only in measure mode)
+                if appModel.gestureMode == .measure {
+                    Attachment(id: "resultBoard") {
+                        Text(appModel.resultString)
+                            .monospacedDigit()
+                            .padding()
+                            .glassBackgroundEffect()
+                            .offset(y: -80)
+                    }
                 }
                 
                 // Attachment for annotation controls (only visible in annotation mode)

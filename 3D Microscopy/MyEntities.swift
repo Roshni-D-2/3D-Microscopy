@@ -104,6 +104,9 @@ class MyEntities {
     // Storage for placed measurements
     private var placedMeasurements: [MeasurementLine] = []
     
+    // Storage for annotations
+    private var annotations: [UUID: Entity] = [:]
+    
     // Settings
     var maxStoredMeasurements: Int = 20 // Limit to prevent performance issues
     
@@ -137,7 +140,7 @@ class MyEntities {
         root.addChild(resultBoardEntity)
     }
     
-    //sdound
+    //sound
     func playSystemClick(_ num: Int = 1) {
         if(num == 1){
             AudioServicesPlaySystemSound(1104) // 1104 = Tock (keyboard tap-like click)
@@ -146,8 +149,7 @@ class MyEntities {
         }
     }
 
-    
-    func update() {
+    func update(for mode: GestureMode = .measure) {
         guard let leftTip = fingerTips[.left],
               let rightTip = fingerTips[.right] else { return }
         
@@ -158,41 +160,48 @@ class MyEntities {
         let isLeftTracked = leftPos.x > -999 && leftPos.y > -999 && leftPos.z > -999
         let isRightTracked = rightPos.x > -999 && rightPos.y > -999 && rightPos.z > -999
         
-        // Only show measurement when both hands are tracked
+        // Only show measurement line in measure mode when both hands are tracked
         guard isLeftTracked && isRightTracked else {
             currentLine.isEnabled = false
             resultBoard?.isEnabled = false
             return
         }
         
-        let centerPosition = (leftPos + rightPos) / 2
-        let length = distance(leftPos, rightPos)
-        
-        // Only show the line if there's a meaningful distance
-        if length > 0.005 { // Increased threshold
-            currentLine.position = centerPosition
-            currentLine.components.set(ModelComponent(
-                mesh: .generateBox(
-                    width: 0.003,
-                    height: 0.003,
-                    depth: length,
-                    cornerRadius: 0.001
-                ),
-                materials: [SimpleMaterial(color: .systemPurple, roughness: 0.2, isMetallic: false)]
-            ))
+        // Only show the purple line and measurements in measure mode
+        if mode == .measure {
+            let centerPosition = (leftPos + rightPos) / 2
+            let length = distance(leftPos, rightPos)
             
-            currentLine.look(at: leftPos, from: centerPosition, relativeTo: nil)
-            currentLine.isEnabled = true
-            resultBoard?.isEnabled = true
+            // Only show the line if there's a meaningful distance
+            if length > 0.005 { // Increased threshold
+                currentLine.position = centerPosition
+                currentLine.components.set(ModelComponent(
+                    mesh: .generateBox(
+                        width: 0.003,
+                        height: 0.003,
+                        depth: length,
+                        cornerRadius: 0.001
+                    ),
+                    materials: [SimpleMaterial(color: .systemPurple, roughness: 0.2, isMetallic: false)]
+                ))
+                
+                currentLine.look(at: leftPos, from: centerPosition, relativeTo: nil)
+                currentLine.isEnabled = true
+                resultBoard?.isEnabled = true
+            } else {
+                currentLine.isEnabled = false
+                resultBoard?.isEnabled = false
+            }
+            
+            // Position the result board above the center point
+            resultBoard?.setPosition(centerPosition + SIMD3<Float>(0, 0.01, 0), relativeTo: nil)
         } else {
+            // In annotation mode or other modes, hide the purple line and result board
             currentLine.isEnabled = false
             resultBoard?.isEnabled = false
         }
         
-        // Position the result board above the center point
-        resultBoard?.setPosition(centerPosition + SIMD3<Float>(0, 0.01, 0), relativeTo: nil)
-        
-        // Update arrow orientations to point toward each other
+        // Update arrow orientations to point toward each other (for both modes)
         updateArrowOrientations()
     }
     
@@ -286,6 +295,67 @@ class MyEntities {
     /// Gets measurement count
     var measurementCount: Int {
         return placedMeasurements.count
+    }
+    
+    // MARK: - Annotation Management
+    
+    /// Add an annotation to the scene
+    func addAnnotation(_ annotation: AnnotationNote) {
+        root.addChild(annotation.entity)
+        annotations[annotation.id] = annotation.entity
+        print("Added annotation to scene: \(annotation.id)")
+    }
+    
+    /// Remove an annotation from the scene by ID
+    func removeAnnotation(id: UUID) {
+        guard let entity = annotations[id] else {
+            print("Annotation not found: \(id)")
+            return
+        }
+        entity.removeFromParent()
+        annotations.removeValue(forKey: id)
+        print("Removed annotation from scene: \(id)")
+    }
+    
+    /// Clear all annotations from the scene
+    func clearAllAnnotations() {
+        annotations.values.forEach { $0.removeFromParent() }
+        annotations.removeAll()
+        print("Cleared all annotations from scene")
+    }
+    
+    /// Get annotation count in scene
+    var sceneAnnotationCount: Int {
+        return annotations.count
+    }
+    
+    // MARK: - Mode-based Visibility Management
+    
+    /// Update visibility of measurements and current line based on gesture mode
+    func updateVisibilityForMode(_ mode: GestureMode) {
+        switch mode {
+        case .measure:
+            // Show measurements and current line
+            placedMeasurements.forEach { $0.entity.isEnabled = true }
+            currentLine.isEnabled = true
+            
+            // Hide finger tips in other modes
+            fingerTips.values.forEach { $0.isEnabled = true }
+            
+        case .annotate:
+            // Hide measurements and current line
+            placedMeasurements.forEach { $0.entity.isEnabled = false }
+            currentLine.isEnabled = false
+            
+            // Show finger tips for positioning
+            fingerTips.values.forEach { $0.isEnabled = true }
+            
+        case .none, .drag, .rotate, .scale, .crop:
+            // Hide everything hand-tracking related
+            placedMeasurements.forEach { $0.entity.isEnabled = false }
+            currentLine.isEnabled = false
+            fingerTips.values.forEach { $0.isEnabled = false }
+        }
     }
     
     // MARK: - Formatting and Display

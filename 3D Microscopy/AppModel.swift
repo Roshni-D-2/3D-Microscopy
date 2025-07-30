@@ -16,7 +16,12 @@ enum GestureMode: String, CaseIterable {
 @MainActor
 class AppModel: ObservableObject {
 
-    @Published var gestureMode: GestureMode = .none
+    @Published var gestureMode: GestureMode = .none {
+        didSet {
+            // Update visibility when gesture mode changes
+            myEntities.updateVisibilityForMode(gestureMode)
+        }
+    }
 
     let immersiveSpaceID = "ImmersiveSpace"
     enum ImmersiveSpaceState {
@@ -118,9 +123,9 @@ class AppModel: ObservableObject {
                 detectPinchGesture(handAnchor.chirality, pinchDistance, indexPos)
             }
             
-            // Only update visual elements if measuring is on (existing functionality)
+            // Only update visual elements if measuring/annotating is on
             if isOn {
-                myEntities.update()
+                myEntities.update(for: gestureMode)
                 
                 // Update result string based on current mode
                 switch gestureMode {
@@ -213,7 +218,7 @@ class AppModel: ObservableObject {
         let annotation = annotationManager.createAnnotation(at: position, text: text)
         
         // Add annotation entity to scene
-        //myEntities.addAnnotation(annotation)
+        myEntities.addAnnotation(annotation)
         
         // Clear pending position
         pendingAnnotationPosition = nil
@@ -242,17 +247,23 @@ class AppModel: ObservableObject {
     
     func placeAnnotation(at position: SIMD3<Float>, text: String = "") {
         let annotation = annotationManager.createAnnotation(at: position, text: text)
-        //myEntities.addAnnotation(annotation)
+        myEntities.addAnnotation(annotation)
         print("Annotation placed at: \(position)")
     }
     
     func removeLastAnnotation() {
-        annotationManager.removeLastAnnotation()
+        if let lastAnnotation = annotationManager.getAllAnnotations().last {
+            annotationManager.removeAnnotation(id: lastAnnotation.id)
+            myEntities.removeAnnotation(id: lastAnnotation.id)
+        }
     }
     
     func clearAllAnnotations() {
+        let allAnnotations = annotationManager.getAllAnnotations()
+        for annotation in allAnnotations {
+            myEntities.removeAnnotation(id: annotation.id)
+        }
         annotationManager.clearAllAnnotations()
-        //myEntities.clearAllAnnotations()
         print("🧹 All annotations cleared")
     }
     

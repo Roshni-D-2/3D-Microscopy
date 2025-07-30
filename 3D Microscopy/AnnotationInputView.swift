@@ -89,18 +89,6 @@ struct AnnotationInputView: View {
             
             // Action Buttons
             HStack(spacing: 16) {
-                Button("Cancel") {
-                    appModel.cancelPendingAnnotation()
-                    dismissWindow(id: "AnnotationInput")
-                }
-                .foregroundColor(.red)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
-                .background(Color.red.opacity(0.1))
-                .cornerRadius(20)
-                
-                Spacer()
-                
                 Button("Clear") {
                     tempText = ""
                 }
@@ -203,10 +191,12 @@ struct AnnotationControlsView: View {
             }
         }
         .padding(12)
-//        .background(Color.purple.opacity(0.8))
+        .background(Color.purple.opacity(0.8))
         .background(Color.purple)
         .cornerRadius(12)
         .frame(maxWidth: 200)
+        .allowsHitTesting(true) // Ensure this view can be interacted with
+        .background(.clear) // Make sure background doesn't block interaction
     }
 }
 
